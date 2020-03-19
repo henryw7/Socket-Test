@@ -6,6 +6,8 @@ using System.IO;
 public class test : MonoBehaviour
 {
     private TcpClient socket;
+    const int HANDSHAKE = 4;
+    const int VERSION = 2;
 
     // Start is called before the first frame update
     void Start()
@@ -38,10 +40,10 @@ public class test : MonoBehaviour
             return false;
         }
 
-        return handleTCHandshake();
+        return handleHandshake();
     }
 
-    private bool handleTCHandshake()
+    private bool handleHandshake()
     {
         BinaryReader reader;
         try
@@ -57,7 +59,7 @@ public class test : MonoBehaviour
         int type = System.Net.IPAddress.NetworkToHostOrder(reader.ReadInt32());
         int version = reader.ReadInt32();
 
-        if (type != 4 && version != 2)
+        if (type != HANDSHAKE && version != VERSION)
         {
             Debug.Log("IMD Handshake failed. Expected message type 4, got " + type + ". Expected version 2, got " + version);
             return false;
@@ -87,14 +89,15 @@ public class test : MonoBehaviour
 
         if (stream.DataAvailable)
         {
-
             int bytesLeft = dataLength * System.Runtime.InteropServices.Marshal.SizeOf(dataType);
             int bytesRead = 0;
             byte[] packet = new byte[bytesLeft];
+            for (int i = 0; i < bytesLeft; i++)
+                packet[i] = 255;
 
             try
             {
-                while (bytesRead < 10)
+                while (bytesRead < dataLength * System.Runtime.InteropServices.Marshal.SizeOf(dataType))
                 {
                     int read = stream.Read(packet, bytesRead, bytesLeft);
                     bytesRead += read;
